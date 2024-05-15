@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Уведомление о невыполнении рекомендованных цен</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            line-height: 1.6;
+            margin: 0;
+            padding: 0;
+        }
+        .container {
+            max-width: 600px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+        th, td {
+            padding: 8px;
+            text-align: left;
+            border-bottom: 1px solid #ddd;
+        }
+        th {
+            background-color: #f2f2f2;
+        }
+        @media screen and (max-width: 600px) {
+            table {
+                border: 0;
+            }
+            table thead {
+                display: none;
+            }
+            table tbody tr {
+                display: block;
+                margin-bottom: 20px;
+            }
+            table tbody td {
+                display: block;
+                text-align: center;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <p>Обнаружено, что цены на некоторые товары на торговой площадке <b>Onliner</b> не соответствуют рекомендованным розничным ценам.</p>
+        {% for shop, violations in context|groupby('shop.title') %}
+            
+        <h4><a href="{{ violations.0.shop.shop_info_json.html_url}}/about" target="_blank">{{shop}}</a></h4>
+        <table>
+            <thead>
+                <tr>
+                    <th>Название товара/ссылка</th>
+                    <th>Цена продавца</th>
+                    <th>Рекомендованная цена</th>
+                    <th>Демпинг</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for violation in violations %}
+                <tr>
+                    <td><a href="{{ violation.product.onliner_url }}">{{ violation.product_name }}</a></td>
+                    <td>{{ violation.shop_price }}</td>
+                    <td>{{ violation.base_price }}</td>
+                    <td>{{ ((1-violation.shop_price/violation.base_price)*100) | round(2,'common') }}%</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+        {% endfor %}
+        {# <p>Все актуальные прайс-листы доступны по ссылке: <a href="https://price.pravim.by">price.pravim.by</a>
+            <br>Обращаем ваше внимание, для каждого бренда есть заливочный файл для удобной работы интернет-магазинов
+            <br>Информация регулярно обновляется и актуализируеться.
+        </p>
+        <p>С уважением,<br><b>ООО "ПРАВИМ"</b></p> #}
+    </div>
+</body>
+</html>
