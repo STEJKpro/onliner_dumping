@@ -5,8 +5,7 @@ from io import BytesIO
 from database import Session
 from sqlalchemy import select
 from models import onliner_dumping as db
-from decimal import Decimal
-
+import logging
 
 def get_price_df() -> pd.DataFrame:
     df = pd.DataFrame()
@@ -31,13 +30,11 @@ def get_price_df() -> pd.DataFrame:
                 )
                 new_df['price'] = pd.to_numeric(new_df['price'], errors='coerce')
                 df = df = pd.concat([df, new_df])
-
-    df.to_csv('data.txt', sep='|', index=True)
     return df
-        # print (pd.read_excel(xlsx_file, ))
     
        
 def update_price():
+    logging.debug("Start price update")
     df = get_price_df()
     with Session() as session:
         products = session.execute(select(db.Product)).scalars().all()
@@ -46,3 +43,5 @@ def update_price():
                 product.price = df.loc[product.vendor_code, 'price']
             except KeyError: product.price = 0
         session.commit()
+    logging.debug("Price update successfully")
+    

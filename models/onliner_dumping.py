@@ -56,6 +56,10 @@ class Shop(Base):
     shop_info_json = Column(JSON)
     
     shop_custom_contacts: Mapped["ShopCustomContacts"] = relationship()
+    
+    @property
+    def email(self):
+        return self.shop_custom_contacts.email if self.shop_custom_contacts else self.shop_info_json["addresses"][0]["email"]
 
 class ShopCustomContacts(Base):
     __tablename__ = 'shops_custom_contacts'
@@ -73,3 +77,4 @@ class DumpingCategory(Base):
     dumping_percentage = Column(Float, nullable=False)
     description = Column(String)
     product = relationship("Product", back_populates="dumping_category", uselist=False)
+    

@@ -1,17 +1,30 @@
-from data_schemas.data_model import Product, Positions, Position, Shop
-from typing import List
-from decimal import Decimal
-import requests
-import models.onliner_dumping as db
-from database import Session
-from sqlalchemy import select, and_, desc, update
-from sqlalchemy.dialects.sqlite import insert
+import argparse
+import logging
 import uuid
-from sqlalchemy.orm import lazyload
-from email_module.sender import send_email, generate_message
-from config import config
+from decimal import Decimal
+from typing import List
+
+import requests
 from progress.bar import IncrementalBar
+from sqlalchemy import and_, desc, select, update
+from sqlalchemy.dialects.sqlite import insert
+from sqlalchemy.orm import lazyload
+
+import models.onliner_dumping as db
+from config import config
+from data_schemas.data_model import Position, Positions, Product, Shop
+from database import Session
+from email_module.sender import generate_message, send_email
 from price_update_module.updater import update_price
+
+logging.basicConfig(filename='logs/degub.log', filemode='a+', level=logging.DEBUG, encoding='utf-8')
+
+arg_parser = argparse.ArgumentParser()
+arg_parser.add_argument ("--admin_email", help="Send admin email report", action="store_true")
+arg_parser.add_argument ("--notify_emails", help="Send notyfy email for sellers", action="store_true")
+arg_parser.add_argument ("--without_price_update", action="store_true")
+arg_parser.add_argument ("--admin_email_by_id",)
+
 
 task_id = uuid.uuid4()
 
@@ -47,26 +60,26 @@ def send_notification_emails(task_id):
     with Session() as session:
         stmt = select(db.Violation.shop_id).where(db.Violation.task_id == task_id).distinct()
         for shop_id in session.scalars(stmt):
-            print (shop_id)
             stmt = select(db.Violation).options(lazyload(db.Violation.shop)).filter(and_(db.Violation.task_id == task_id, db.Violation.shop_id ==shop_id))
             violations = session.scalars(stmt).all()
-            context = [ {
-                         'product':i.product.__dict__, 
-                         'shop': i.shop.__dict__,
-                         'shop_price': i.shop_price,
-                         'base_price': i.base_price,
-                         'product_name':i.onliner_product_info.get("full_name"),
-                         'email': i.email
-                         }
-                            for i in violations]
-            msg = generate_message('email_templates/violations_notifier.html', context=context)
-
-            send_email(recipient_email=violations[0].email, message_text= msg)
-            # send_email(recipient_emails=['sd.bravat@gmail.com', 'dk.pravim@mail.ru'], message_text= msg)
+            if violations[0].email == 'IGNORE':
+                logging.info(f'Сообщение для {violations[0].shop.title} не отправлено. Email - EGNORE')
+            else:
+                context = [ {
+                            'product':i.product.__dict__, 
+                            'shop': i.shop.__dict__,
+                            'shop_price': i.shop_price,
+                            'base_price': i.base_price,
+                            'product_name':i.onliner_product_info.get("full_name"),
+                            'email': i.email
+                            }
+                                for i in violations]
+                msg = generate_message('email_templates/violations_notifier.html', context=context)
+                send_email(recipient_emails=['sd.bravat@gmail.com'], message_text= msg)
+                logging.info(f'Сообщение для {violations[0].shop.title} отправлено на {violations[0].email}')
+                # send_email(recipient_emails=[violations[0].email,], message_text= msg)
             
-
 def send_admin_email(task_id):
-    # print(task_id)
     with Session() as session:
         stmt = select(db.Violation).options(lazyload(db.Violation.shop)).filter(db.Violation.task_id == task_id).order_by(desc(1-db.Violation.shop_price/db.Violation.base_price))
         violations = session.scalars(stmt)
@@ -75,11 +88,18 @@ def send_admin_email(task_id):
                         'shop': i.shop.__dict__,
                         'shop_price': i.shop_price,
                         'base_price': i.base_price,
-                        'product_name':i.onliner_product_info.get("full_name")
+                        'product_name':i.onliner_product_info.get("full_name"),
+                        'email': i.email
                         }
                         for i in violations]
-    msg = generate_message('email_templates/admin_violations_report.html', context=context)
-    send_email(recipient_emails= config['EMAIL']['ADMIN_EMAIL'].replace(' ','').split(','), message_text= msg, msg_id=task_id)
+        if context: 
+            msg = generate_message('email_templates/admin_violations_report.html', context=context)
+            send_email(recipient_emails= config['EMAIL']['ADMIN_EMAIL'].replace(' ','').split(','), message_text= msg, msg_id=task_id)
+            logging.info(f"Отчет администратора отправлен {config['EMAIL']['ADMIN_EMAIL'].replace(' ','').split(',')}")
+        else:
+            logging.info(f"Отправка отчета админу пропущено, т.к. отсутствуют нарушения. Отправка пустого уведомительного письма; {config['EMAIL']['ADMIN_EMAIL'].replace(' ','').split(',')}")
+            send_email(recipient_emails= config['EMAIL']['ADMIN_EMAIL'].replace(' ','').split(','), message_text= "НАРУШЕНИЙ НЕ ОБНАРУЖЕНО", msg_id=task_id)
+            return
 
 def update_products_price():
     with Session() as session:
@@ -89,10 +109,17 @@ def update_products_price():
         )
 
 if __name__ =='__main__':
-    print ("Обновляем прайс")
+    args = arg_parser.parse_args()
+    if args.admin_email_by_id:
+        send_admin_email(args.admin_email_by_id)
+        exit()
+    
     #Update products price from google sheet
-    update_price()
-    print (task_id)
+    if args.without_price_update:
+        logging.debug('Установлен флаг "--without_price_update". Обновления прайса пропущено')
+    else:
+        update_price()
+
     violating_stores ={}
     with Session() as session:
         check_list = session.query(db.Product).all()
@@ -104,7 +131,7 @@ if __name__ =='__main__':
             product = get_product_info(
                 get_product_data_url(check_product.onliner_url)
             )
-            if product.prices and product.prices.price_min.amount/check_product.price<= 1-check_product.dumping_category.dumping_percentage:
+            if product.prices and check_product.price > 0 and product.prices.price_min.amount/check_product.price<= 1-check_product.dumping_category.dumping_percentage:
                 for position in get_positions_info(product.positions_url):
                     if position.position_price.amount/check_product.price <= 1-check_product.dumping_category.dumping_percentage:
                         shop = violating_stores.get(position.shop_full_info_url)
@@ -142,6 +169,11 @@ if __name__ =='__main__':
                         )
             progrss_bar.next()
         session.commit()
-        
-    # send_notification_emails(str(task_id))
-    send_admin_email(str(task_id))
+    
+    if args.admin_email:
+        logging.info("Запуск отправки отчета администратору")
+        send_admin_email(str(task_id))
+    if args.notify_emails:
+        logging.info("Запуск отправки писем нарушителям")
+        send_notification_emails(str(task_id))
+    
