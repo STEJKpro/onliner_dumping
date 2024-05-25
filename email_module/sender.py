@@ -60,9 +60,6 @@ def send_email(recipient_emails:list, message_text, msg_id:str=None):
     
     #Добавление письма в отправленные
     with imaplib.IMAP4_SSL(imap_host, imap_port) as mail:
-        mail.login(sender_email, password)
-        for folder in mail.list()[1]:
-            print(utf7_decode(folder))
         mail.select(utf7_encode(imap_folder))
         result, _ = mail.append(utf7_encode(imap_folder), '', imaplib.Time2Internaldate(time.time()), msg.as_bytes())
         if result == 'OK':
