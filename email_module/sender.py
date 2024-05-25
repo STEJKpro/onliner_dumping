@@ -13,13 +13,18 @@ from email.headerregistry import Address
 import smtplib
 from config import config
 from jinja2 import Environment, FileSystemLoader
-
+import logging
+import imaplib
+import time
+import shlex
+from imap_tools.imap_utf7 import utf7_decode, utf7_encode
 # Загрузка шаблона из файла
 file_loader = FileSystemLoader('./templates/')
 env = Environment(loader=file_loader)
 
 # Параметры
 def send_email(recipient_emails:list, message_text, msg_id:str=None): 
+    logging.debug(f"Отправка письма: {recipient_emails}")
     subj = '❗Неверные цены❗'
     org = config['EMAIL']['SENDER_ORG'] # фирма
     sender_name = config['EMAIL']['SENDER_NAME'] # имя отправителя
@@ -27,6 +32,9 @@ def send_email(recipient_emails:list, message_text, msg_id:str=None):
     password = config['EMAIL']['SENDER_PASSWORD']
     email_host = config['EMAIL']['EMAIL_HOST']
     email_port = config['EMAIL']['EMAIL_PORT']
+    imap_host = config['EMAIL']['EMAIL_IMAP']
+    imap_port = config['EMAIL']['EMAIL_IMAP_PORT']
+    imap_folder = config['EMAIL']['EMAIL_IMAP_SENT_FOLDER']
     
     # формируем письмо
     msg = MIMEMultipart('related')
@@ -49,6 +57,18 @@ def send_email(recipient_emails:list, message_text, msg_id:str=None):
     with smtplib.SMTP_SSL(email_host, email_port) as server:
         server.login(sender_email, password)
         server.sendmail(to_addrs=recipient_emails, from_addr=sender_email, msg=msg.as_string())
+    
+    #Добавление письма в отправленные
+    with imaplib.IMAP4_SSL(imap_host, imap_port) as mail:
+        mail.login(sender_email, password)
+        for folder in mail.list()[1]:
+            print(utf7_decode(folder))
+        mail.select(utf7_encode(imap_folder))
+        result, _ = mail.append(utf7_encode(imap_folder), '', imaplib.Time2Internaldate(time.time()), msg.as_bytes())
+        if result == 'OK':
+            logging.debug(f"Message appended to Sent folder ({imap_folder})")
+        else:
+            logging.debug(f"Failed to append message into \"Sent\" ({imap_folder})")
 
 def generate_message(template: str, context) -> str:
     template = env.get_template(template)

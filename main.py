@@ -75,9 +75,8 @@ def send_notification_emails(task_id):
                             }
                                 for i in violations]
                 msg = generate_message('email_templates/violations_notifier.html', context=context)
-                send_email(recipient_emails=['sd.bravat@gmail.com'], message_text= msg)
+                send_email(recipient_emails=[violations[0].email,], message_text= msg)
                 logging.info(f'Сообщение для {violations[0].shop.title} отправлено на {violations[0].email}')
-                # send_email(recipient_emails=[violations[0].email,], message_text= msg)
             
 def send_admin_email(task_id):
     with Session() as session:
