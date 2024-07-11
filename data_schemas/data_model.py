@@ -171,4 +171,4 @@ class Shop(BaseModel):
     registration_date: str
     customer: Customer
     addresses: List[Address]
-    warranty_contacts: WarrantyContacts | None
+    warranty_contacts: WarrantyContacts | None = None
