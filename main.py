@@ -64,6 +64,8 @@ def send_notification_emails(task_id):
             violations = session.scalars(stmt).all()
             if violations[0].email == 'IGNORE':
                 logging.info(f'Сообщение для {violations[0].shop.title} не отправлено. Email - EGNORE')
+            if len(violations[0].email) < 5 :
+                logging.info(f'Сообщение для {violations[0].shop.title} не отправлено. Email не найден')
             else:
                 context = [ {
                             'product':i.product.__dict__, 

@@ -51,7 +51,7 @@
         <p>Обнаружено, что цены на некоторые товары на торговой площадке <b>Onliner</b> не соответствуют рекомендованным розничным ценам.</p>
         {% for shop, violations in context|groupby('shop.title') %}
             
-        <h4><a href="{{ violations.0.shop.shop_info_json.html_url}}/about" target="_blank">{{shop}}</a> {{ violations.0.email}}</h4>
+        <h4><a href="{{ violations.0.shop.shop_info_json.html_url}}/about" target="_blank">{{shop}}</a> {% if violations.0.email %}{{ violations.0.email}}{% else %}<span style="color: red;">EMAIL НЕ НАЙДЕН</span>{% endif %} </h4>
         <table>
             <thead>
                 <tr>

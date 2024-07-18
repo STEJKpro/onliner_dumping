@@ -91,7 +91,7 @@ class Product(BaseModel):
     name_prefix: str
     extended_name: str
     status: str
-    parent_key: str
+    parent_key: Optional[str]
     sale: Sale
     certification_required: bool
     color_code: Any
