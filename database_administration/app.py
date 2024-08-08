@@ -19,6 +19,7 @@ app.secret_key = 'UkE0GSI0lxNRJ83n6Dul'
 session = Session()
 
 
+    
 # @app.route('/add_violation', methods=['POST'])
 # def add_violation():
 #     task_id = request.form.get('task_id')
@@ -54,7 +55,14 @@ def index():
     categories = session.query(DumpingCategory).all()
     shops = session.query(Shop).all()
     contacts = session.query(ShopCustomContacts).all()
-    return render_template('index.html', violations=violations, products=products, categories=categories, shops=shops, contacts=contacts)
+    return render_template('index.html',violations=violations, products=products, categories=categories, shops=shops, contacts=contacts)
+
+
+@app.route('/violations')
+def violations():
+    violations = session.query(Violation).all()
+    return render_template('violations.html', violations=violations)
+
 
 # Product routes
 @app.route('/add_product', methods=['POST'])

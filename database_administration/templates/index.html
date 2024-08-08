@@ -6,10 +6,11 @@
 </head>
 <body>
 <div class="container mt-2">
+    <a href="{{ url_for('violations') }}" class="btn btn-primary" role="button">Violations</a>
     <a href="{{ url_for('update_products_price') }}" class="btn btn-primary" role="button">Update price</a>
-    <a href="{# {{ url_for('delete_product') }} #}#" class="btn btn-secondary" role="button">Parse shops</a>
-    <a href="{# {{ url_for('delete_product') }} #}#" class="btn btn-secondary" role="button">Parse and send admin email</a>
-    <a href="{# {{ url_for('delete_product') }} #}#" class="btn btn-secondary" role="button">Parse, send admin emails, send shops emails</a>
+    {# <a href="{{ url_for('delete_product') }}" class="btn btn-secondary" role="button">Parse shops</a> #}
+    {# <a href="{{ url_for('delete_product') }}" class="btn btn-secondary" role="button">Parse and send admin email</a> #}
+    {# <a href="{{ url_for('delete_product') }}" class="btn btn-secondary" role="button">Parse, send admin emails, send shops emails</a> #}
 </div>
 {% if session['message'] %}
     <div class="container mt-2">
@@ -20,43 +21,6 @@
 {% endif %}
 <div class="container">
     <h1>Manage Data</h1>
-
-    {# <h2>Violations</h2>
-    <form method="POST" action="{{ url_for('add_violation') }}">
-        <div class="form-group">
-            <input type="text" name="task_id" class="form-control" placeholder="Task ID">
-        </div>
-        <div class="form-group">
-            <input type="text" name="product_id" class="form-control" placeholder="Product ID">
-        </div>
-        <div class="form-group">
-            <input type="text" name="shop_id" class="form-control" placeholder="Shop ID">
-        </div>
-        <div class="form-group">
-            <input type="text" name="shop_price" class="form-control" placeholder="Shop Price">
-        </div>
-        <div class="form-group">
-            <input type="text" name="base_price" class="form-control" placeholder="Base Price">
-        </div>
-        <div class="form-group">
-            <input type="text" name="shop_email" class="form-control" placeholder="Shop Email">
-        </div>
-        <div class="form-group">
-            <input type="text" name="onliner_product_info" class="form-control" placeholder="Onliner Product Info">
-        </div>
-        <button type="submit" class="btn btn-primary">Add Violation</button>
-    </form>
-    <hr>
-    <ul class="list-group">
-        {% for violation in violations %}
-            <li class="list-group-item">
-                Task ID: {{ violation.task_id }} | Product ID: {{ violation.product_id }} | Shop ID: {{ violation.shop_id }}
-                <a href="{{ url_for('delete_violation', id=violation.id) }}" class="btn btn-danger btn-sm float-right">Delete</a>
-                <a href="{{ url_for('edit_violation', id=violation.id) }}" class="btn btn-secondary btn-sm float-right mr-2">Edit</a>
-            </li>
-        {% endfor %}
-    </ul> #}
-
     <h2>Products</h2>
     <form method="POST" action="{{ url_for('add_product') }}">
         <div class="form-group">
