@@ -12,7 +12,7 @@
             padding: 0;
         }
         .container {
-            max-width: 600px;
+            max-width: 800px;
             margin: 0 auto;
             padding: 20px;
         }
@@ -44,6 +44,90 @@
                 text-align: center;
             }
         }
+        /* Alert base styles */
+        .alert {
+            position: relative;
+            padding: 0.75rem 1.25rem;
+            margin-bottom: 1rem;
+            border: 1px solid transparent;
+            border-radius: 0.25rem;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+            font-size: 1rem;
+            line-height: 1.5;
+        }
+
+        /* Danger alert - красный */
+        .alert-danger {
+            color: #721c24;
+            background-color: #f8d7da;
+            border-color: #f5c6cb;
+        }
+
+        .alert-danger hr {
+            border-top-color: #f1b0b7;
+        }
+
+        .alert-danger .alert-link {
+            color: #491217;
+            font-weight: 600;
+        }
+
+        /* Warning alert - желтый */
+        .alert-warning {
+            color: #856404;
+            background-color: #fff3cd;
+            border-color: #ffeeba;
+        }
+
+        .alert-warning hr {
+            border-top-color: #ffe8a1;
+        }
+
+        .alert-warning .alert-link {
+            color: #533f03;
+            font-weight: 600;
+        }
+
+        /* Дополнительные стили для иконок (опционально) */
+        .alert::before {
+            content: "";
+            display: inline-block;
+            margin-right: 0.5rem;
+            font-weight: 900;
+            font-family: "Font Awesome 5 Free";
+        }
+
+        .alert-danger::before {
+            content: "⛔"; /* или используйте иконку из Font Awesome */
+        }
+
+        .alert-warning::before {
+            content: "⚠️"; /* или используйте иконку из Font Awesome */
+        }
+
+        /* Стиль для закрывающей кнопки */
+        .alert-dismissible {
+            padding-right: 4rem;
+        }
+
+        .alert-dismissible .close {
+            position: absolute;
+            top: 0;
+            right: 0;
+            padding: 0.75rem 1.25rem;
+            color: inherit;
+            background: transparent;
+            border: 0;
+            font-size: 1.5rem;
+            font-weight: 700;
+            line-height: 1;
+            opacity: 0.7;
+            cursor: pointer;
+        }
+
+        .alert-dismissible .close:hover {
+            opacity: 1;
+        }
     </style>
 </head>
 <body>
@@ -56,19 +140,33 @@
             <thead>
                 <tr>
                     <th>Название товара/ссылка</th>
+                    <th>Изображеине</th>
                     <th>Цена продавца</th>
                     <th>Рекомендованная цена</th>
-                    <th>Демпинг</th>
+                    <th>Демпинг/Завышение</th>
+                    <th>Статус цены</th>
                 </tr>
             </thead>
             <tbody>
                 {% for violation in violations %}
-                <tr>
-                    <td><a href="{{ violation.product.onliner_url }}">{{ violation.product_name }}</a></td>
-                    <td>{{ violation.shop_price }}</td>
-                    <td>{{ violation.base_price }}</td>
-                    <td>{{ ((1-violation.shop_price/violation.base_price)*100) | round(2,'common') }}%</td>
-                </tr>
+                    {% with demping = ((1-violation.shop_price/violation.base_price)*-100) | round(2,'common')  %}                    
+                    <tr>
+                        <td><a href="{{ violation.product.onliner_url }}">{{ violation.product_name }}</a></td>
+                        <td><a href="https://pravim.by/upload_price/AQUABATH/photo/{{ violation.product.vendor_code }}_photo.jpg"><img style="max-width: 100px; max-height: 100px;" src="https://pravim.by/upload_price/AQUABATH/photo/{{ violation.product.vendor_code }}_photo.jpg?heght=100&width=100" alt=""></a></td>
+                        <td>{{ violation.shop_price }}</td>
+                        <td>{{ violation.base_price }}</td>
+                        <td>{{ demping }}%</td>
+                        {% if demping > 0 %}
+                            <td class="alert alert-warning">Цена завышена</td>
+                            {% elif demping <0 %}
+                            <td class="alert alert-danger">Демпинг</td>
+                            {% else %}
+                            <td> - </td>
+                        {% endif %}
+                        
+
+                    </tr>
+                    {% endwith %}
                 {% endfor %}
             </tbody>
         </table>

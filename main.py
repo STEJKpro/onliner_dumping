@@ -132,9 +132,13 @@ if __name__ =='__main__':
             product = get_product_info(
                 get_product_data_url(check_product.onliner_url)
             )
-            if product.prices and check_product.price > 0 and product.prices.price_min.amount/check_product.price<= 1-check_product.dumping_category.dumping_percentage:
+            if product.prices and \
+                check_product.price > 0 and \
+                    (product.prices.price_min.amount/check_product.price<= 1-check_product.dumping_category.dumping_percentage or \
+                        product.prices.price_min.amount/check_product.price>= 1-check_product.dumping_category.dumping_percentage):
                 for position in get_positions_info(product.positions_url):
-                    if position.position_price.amount/check_product.price <= 1-check_product.dumping_category.dumping_percentage:
+                    if position.position_price.amount/check_product.price <= 1-check_product.dumping_category.dumping_percentage \
+                        or position.position_price.amount/check_product.price >= 1+check_product.dumping_category.dumping_percentage:
                         shop = violating_stores.get(position.shop_full_info_url)
                         if not shop:
                             #Добавление или обновление информации о магазине в БД
